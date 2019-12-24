@@ -156,3 +156,6 @@ GitHub.sublime-settings
 ### VisualStudioCode Patch ###
 # Ignore all local history of files
 .history
+
+# Local database
+db.sqlite3
