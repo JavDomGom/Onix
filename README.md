@@ -19,15 +19,15 @@ Onix game project.
     ~/onix$ vi core/views.py
     ```
     ```python
-    from django.shortcuts import render, HttpResponse
+    from django.shortcuts import render
 
     # Create your views here.
 
     def home(request):
-        return HttpResponse('Inicio')
-    
+        return render(request, 'core/home.html')
+
     def contact(request):
-        return HttpResponse('Contacto')
+        return render(request, 'core/contact.html')
     ```
 
 4. Crear las URLs. Primero crea un nuevo archivo `core/urls.py`.
@@ -58,11 +58,95 @@ Onix game project.
     ]
     ```
 
-5. Migrar el proyecto.
+7. Crear directorios para las plantillas y los ficheros estáticos.
+    ```bash
+    ~/onix$ mkdir core/templates
+    ~/onix$ mkdir core/templates/core
+    ~/onix$ mkdir core/static
+    ~/onix$ mkdir core/static/core
+    ```
+
+8. Crear las plantillas.
+    ```bash
+    ~/onix$ > core/templates/core/base.html
+    ~/onix$ > core/templates/core/home.html
+    ~/onix$ > core/templates/core/contact.html
+    ```
+
+9. Decirle a Django que cargue los templates y los ficheros estáticos añadiendo el directorio `core` a la lista `INSTALLED_APPS`.
+    ```bash
+    ~/onix$ vi onix/settings.py
+    ```
+    ```python
+    INSTALLED_APPS = [
+        'django.contrib.admin',
+        'django.contrib.auth',
+        'django.contrib.contenttypes',
+        'django.contrib.sessions',
+        'django.contrib.messages',
+        'django.contrib.staticfiles',
+        'core',
+    ]
+    ```
+
+10. Crear la app `services`.
+    ```bash
+    ~/onix$ python manage.py startapp services
+    ```
+
+11. Crear el modelo y añadir la app `services` a `settings.py`.
+    ```bash
+    ~/onix$ vi services/models.py
+    ```
+    ```python
+    from django.db import models
+
+    # Create your models here.
+    class Service(models.Model):
+        title = models.CharField(max_length=200, verbose_name='Título')
+        subtitle = models.CharField(max_length=200, verbose_name='Subtítulo')
+        content = models.TextField(verbose_name='Contenido')
+        image = models.ImageField(verbose_name='Imagen', upload_to='services')
+        created = models.DateTimeField(auto_now_add=True, verbose_name='Fechad de creación')
+        updated = models.DateTimeField(auto_now=True, verbose_name='Fechad de edición')
+
+        class Meta:
+            verbose_name = 'servicio'
+            verbose_name_plural = 'servicios'
+            ordering = ['-created']
+        
+        def __str__(self):
+            return self.title
+    ```
+    ```bash
+    ~/onix$ vi onix/settings.py
+    ```
+    ```python
+    INSTALLED_APPS = [
+        'django.contrib.admin',
+        'django.contrib.auth',
+        'django.contrib.contenttypes',
+        'django.contrib.sessions',
+        'django.contrib.messages',
+        'django.contrib.staticfiles',
+        'core',
+        'services',
+    ]
+    ```
+
+12. Preparar la migración.
+    ```bash
+    ~/onix$ python manage.py makemigrations
+    Migrations for 'services':
+    services/migrations/0001_initial.py
+        - Create model Service
+    ```
+
+13. Migrar el proyecto.
     ```bash
     ~/onix$ python manage.py migrate
     Operations to perform:
-        Apply all migrations: admin, auth, contenttypes, sessions
+        Apply all migrations: admin, auth, contenttypes, services, sessions
     Running migrations:
         Applying contenttypes.0001_initial... OK
         Applying auth.0001_initial... OK
@@ -80,9 +164,36 @@ Onix game project.
         Applying auth.0009_alter_user_last_name_max_length... OK
         Applying auth.0010_alter_group_name_max_length... OK
         Applying auth.0011_update_proxy_permissions... OK
+        Applying services.0001_initial... OK
         Applying sessions.0001_initial... OK
     ```
-6. Iniciar el servidor.
+
+14. Crear superusuario de la consola de administración.
+    ```bash
+    ~/onix$ python manage.py createsuperuser
+    Username (leave blank to use 'johndoe'): admin
+    Email address: info@mail.org
+    Password: 
+    Password (again): 
+    Superuser created successfully.
+    ```
+
+15. Hacer que la nueva app `services` esté disponible desde el penel de administración.
+    ```bash
+    ~/onix$ vi services/admin.py
+    ```
+    ```python
+    from django.contrib import admin
+    from .models import Service
+
+    # Register your models here.
+    class ServiceAdmin(admin.ModelAdmin):
+        readonly_fields = ('created', 'updated')
+
+    admin.site.register(Service, ServiceAdmin)
+    ```
+
+16. Iniciar el servidor.
     ```bash
     ~/onix$ python manage.py runserver
     Watching for file changes with StatReloader
@@ -93,4 +204,36 @@ Onix game project.
     Django version 2.2.9, using settings 'onix.settings'
     Starting development server at http://127.0.0.1:8000/
     Quit the server with CONTROL-C.
+    ```
+
+17. Traducir la app al español.
+    ```bash
+    ~/onix$ vi onix/settings.py
+    ```
+    ```python
+    INSTALLED_APPS = [
+        'django.contrib.admin',
+        'django.contrib.auth',
+        'django.contrib.contenttypes',
+        'django.contrib.sessions',
+        'django.contrib.messages',
+        'django.contrib.staticfiles',
+        'core',
+        'services.apps.ServicesConfig',
+    ]
+    
+    ...
+
+    LANGUAGE_CODE = 'es'
+    ```
+    ```bash
+    ~/onix$ vi services/apps.py
+    ```
+    ```python
+    from django.apps import AppConfig
+
+
+    class ServicesConfig(AppConfig):
+        name = 'services'
+        verbose_name = 'Gestor de servicios'
     ```
